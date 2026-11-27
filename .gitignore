@@ -1,0 +1,4 @@
+.watch-short-videos-cache/
+__pycache__/
+.pytest_cache/
+*.pyc
