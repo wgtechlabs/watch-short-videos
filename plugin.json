@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "watch-short-videos",
+  "version": "0.2.0",
+  "description": "Extract timestamped frames and captions from short videos using local tools.",
+  "license": "MIT",
+  "repository": "https://github.com/wgtechlabs/watch-short-videos",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Watch Short Videos",
+        "shortDescription": "Summarize short videos"
+      }
+    }
+  }
+}
