@@ -1,6 +1,6 @@
 [project]
 name = "watch-short-videos"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.10"
 description = "Local-first short-form video extraction for AI agents"
 license = "MIT"

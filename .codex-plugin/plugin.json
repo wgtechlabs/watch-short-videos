@@ -1,0 +1,10 @@
+{
+  "name": "watch-short-videos",
+  "version": "0.2.0",
+  "description": "Extract timestamped frames and captions from short videos using local tools.",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Watch Short Videos",
+    "shortDescription": "Summarize short videos"
+  }
+}

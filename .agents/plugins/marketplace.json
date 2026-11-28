@@ -1,0 +1,12 @@
+{
+  "name": "wgtechlabs-video-tools",
+  "interface": {"displayName": "WG Tech Labs Video Tools"},
+  "plugins": [
+    {
+      "name": "watch-short-videos",
+      "source": {"source": "local", "path": "./"},
+      "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+      "category": "Productivity"
+    }
+  ]
+}
