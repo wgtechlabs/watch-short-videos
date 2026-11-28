@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from engine import cli
+from engine.captions import get_captions
 
 URL = "https://www.youtube.com/shorts/test"
 WEBVTT = "WEBVTT\n\n00:00:00.100 --> 00:00:01.500\n<c>Hello &amp; welcome</c>\n"
@@ -30,15 +31,15 @@ class ExtractionTests(unittest.TestCase):
                         "-i", "color=s=96x64:r=30:d=2", "-c:v", "mpeg4",
                         str(self.cache / "video.mp4")], check=True, timeout=30)
 
-    def downloader(self, tracks, fail_creator=False):
+    def downloader(self, tracks, unavailable=()):
         def run(args, timeout=30):
             if args[0] != "yt-dlp":
                 return cli_run(args, timeout=timeout)
             if "--dump-single-json" in args:
                 return json.dumps(tracks)
-            if fail_creator and "--write-subs" in args:
-                raise RuntimeError("Caption URL expired")
             option = args[args.index("--sub-langs") + 1]
+            if option in unavailable:
+                raise RuntimeError("Caption URL expired")
             template = args[args.index("-o") + 1]
             Path(template.replace("%(ext)s", f"{option}.vtt")).write_text(WEBVTT)
             return ""
@@ -70,13 +71,18 @@ class ExtractionTests(unittest.TestCase):
                     self.assertIsNone(manifest["captions"])
 
     def test_automatic_captions_after_creator_failure(self):
-        from engine.captions import get_captions
-
         tracks = {"subtitles": {"en": [{"ext": "vtt"}]},
                   "automatic_captions": {"en-orig": [{"ext": "vtt"}]}}
-        result = get_captions(self.downloader(tracks, fail_creator=True), cli.DOWNLOADER,
+        result = get_captions(self.downloader(tracks, unavailable=("en",)), cli.DOWNLOADER,
                               URL, self.output)
         self.assertEqual(result["source"], "automatic")
+
+    def test_next_creator_track_wins_before_automatic_captions(self):
+        tracks = {"subtitles": {"en": [{"ext": "vtt"}], "es": [{"ext": "vtt"}]},
+                  "automatic_captions": {"en-orig": [{"ext": "vtt"}]}}
+        result = get_captions(self.downloader(tracks, unavailable=("en",)), cli.DOWNLOADER,
+                              URL, self.output)
+        self.assertEqual((result["source"], result["language"]), ("creator", "es"))
 
     def test_failed_download_leaves_no_manifest_or_partial_video(self):
         def fail(args, timeout):

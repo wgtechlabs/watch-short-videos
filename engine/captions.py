@@ -3,6 +3,7 @@ import json
 import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import monotonic
 
 
 def timestamp(value):
@@ -50,22 +51,25 @@ def get_captions(run, downloader, url, folder):
                 lang,
             ),
         )
-        if not languages:
-            continue
-        language = languages[0]
-        attempted = True
-        with TemporaryDirectory(dir=folder) as scratch:
-            template = str(Path(scratch).resolve() / "captions.%(ext)s")
-            try:
-                run([*downloader, "--skip-download", option, "--sub-langs", language,
-                     "--sub-format", "vtt", "-o", template, "--", url], timeout=60)
-                path = Path(scratch) / f"captions.{language}.vtt"
-                if path.is_file():
-                    cues = parse_vtt(path.read_text(encoding="utf-8-sig"))
-                    if cues:
-                        return {"source": source, "language": language, "cues": cues}
-            except (RuntimeError, OSError, UnicodeError):
-                continue
+        # shortcut: cap retries at three tracks and one minute per source.
+        deadline = monotonic() + 60
+        for language in languages[:3]:
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                break
+            attempted = True
+            with TemporaryDirectory(dir=folder) as scratch:
+                template = str(Path(scratch).resolve() / "captions.%(ext)s")
+                try:
+                    run([*downloader, "--skip-download", option, "--sub-langs", language,
+                         "--sub-format", "vtt", "-o", template, "--", url], timeout=remaining)
+                    path = Path(scratch) / f"captions.{language}.vtt"
+                    if path.is_file():
+                        cues = parse_vtt(path.read_text(encoding="utf-8-sig"))
+                        if cues:
+                            return {"source": source, "language": language, "cues": cues}
+                except (RuntimeError, OSError, UnicodeError):
+                    continue
     if attempted:
         raise RuntimeError("Available caption tracks could not be read")
     return None

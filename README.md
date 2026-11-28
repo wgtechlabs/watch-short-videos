@@ -23,7 +23,7 @@ python3 -m engine.cli extract "https://www.youtube.com/shorts/VIDEO_ID"
 python3 -m engine.cli extract "VIDEO_URL" --mode full --output ./video-cache
 ```
 
-The command prints the JSON manifest path. Fast samples up to 8 frames and Full up to 24. The manifest includes the video path, duration, timestamped frame paths, limitations, and a nullable `captions` field. Caption objects contain a `source` (creator or automatic), `language`, and `cues` with start/end times in seconds and text. Within a source, the media language and original tracks take priority, then English, then the next available track. Visual extraction remains available if captions cannot be retrieved.
+The command prints the JSON manifest path. Fast samples up to 8 frames and Full up to 24. The manifest includes the video path, duration, timestamped frame paths, limitations, and a nullable `captions` field. Caption objects contain a `source` (creator or automatic), `language`, and `cues` with start/end times in seconds and text. Within a source, the media language and original tracks take priority, then English, then the next available track. The downloader tries up to three tracks per source, starting with creator captions. Visual extraction remains available if captions cannot be retrieved.
 
 Downloaded videos, frames, and manifests stay in `.watch-short-videos-cache/` under the working directory unless `--output` is set. Delete the cache directory you used to remove those files when no extraction is running.
 
@@ -40,3 +40,13 @@ Run `python3 -m unittest discover -s tests -v` with FFmpeg and ffprobe on PATH. 
 ## Releases
 
 Run **Tests and release** manually from the Actions tab on `main`. The release job waits for both test jobs, then uses Clean Commit messages to calculate the version, update the manifests and changelog, and create the GitHub release.
+
+### Recover a release after its tag was pushed
+
+If **Tests and release** pushed a tag but failed to create the GitHub release, check that the tag points to the intended release commit and that the release does not already exist. Then run the following with the existing tag in place of `v0.2.0`:
+
+```sh
+gh release create v0.2.0 --repo wgtechlabs/watch-short-videos --verify-tag --generate-notes
+```
+
+The [GitHub CLI](https://cli.github.com/manual/gh_release_create) verifies the remote tag and generates release notes. This recovery step does not create or move a tag.
