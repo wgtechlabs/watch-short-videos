@@ -64,7 +64,7 @@ The offline suite uses a generated local video and controlled downloader respons
 
 ### Releases
 
-Run **Tests and release** manually from the Actions tab on `main`. The release job waits for both test jobs. It uses Clean Commit messages to calculate the version, then updates the manifests and changelog and creates the GitHub release.
+The **Release** workflow runs automatically on pushes to `main`. It uses Clean Commit messages to calculate the version, updates the manifests and changelog, and publishes the GitHub release.
 
 ### Recover a release after its tag was pushed
 

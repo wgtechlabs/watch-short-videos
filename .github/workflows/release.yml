@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Plan release
+        id: plan
+        uses: wgtechlabs/release-build-flow-action@6df9cb42c24c296d902150d051a0b6be4422cccc # v1
+        with:
+          initial-version: "0.2.0"
+          dry-run: true
+          changelog-enabled: false
+          sync-version-files: false
+
+      - name: Update plugin versions
+        if: steps.plan.outputs.version-bump-type != 'none'
+        env:
+          RELEASE_VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          for manifest in plugin.json .codex-plugin/plugin.json; do
+            jq --arg version "$RELEASE_VERSION" '.version = $version' "$manifest" > "$RUNNER_TEMP/plugin.json"
+            mv "$RUNNER_TEMP/plugin.json" "$manifest"
+            git add "$manifest"
+          done
+
+      - name: Publish release
+        if: steps.plan.outputs.version-bump-type != 'none'
+        uses: wgtechlabs/release-build-flow-action@6df9cb42c24c296d902150d051a0b6be4422cccc # v1
+        with:
+          planned-version: ${{ steps.plan.outputs.version }}
+          planned-version-tag: ${{ steps.plan.outputs.version-tag }}
+          planned-version-bump-type: ${{ steps.plan.outputs.version-bump-type }}
+          planned-previous-version: ${{ steps.plan.outputs.previous-version }}
+          sync-version-files: true
+          version-file-paths: pyproject.toml
+          changelog-path: ./CHANGELOG.md
+          commit-changelog: true
+          create-release: true
